@@ -15,6 +15,7 @@ import com.example.runningtracker.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.example.runningtracker.other.Constants.MAP_ZOOM
 import com.example.runningtracker.other.Constants.POLYLINE_COLOR
 import com.example.runningtracker.other.Constants.POLYLINE_WIDTH
+import com.example.runningtracker.other.TrackingUtility
 import com.example.runningtracker.services.Polyline
 import com.example.runningtracker.services.TrackingService
 import com.example.runningtracker.ui.viewmodels.MainViewModel
@@ -31,10 +32,12 @@ class TrackingFragment : Fragment() {
 
     private val viewModel: MainViewModel by viewModels()
     private lateinit var binding: FragmentTrackingBinding
-    lateinit var map: GoogleMap
+    var map: GoogleMap? = null
 
     private var isTracking = false
     private var pathPoints = mutableListOf<Polyline>()
+
+    private var curTimeInMillis = 0L
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -72,6 +75,12 @@ class TrackingFragment : Fragment() {
             addLatestPolyline()
             moveCameraToUser()
         }
+
+        TrackingService.timeRunInMillis.observe(viewLifecycleOwner) {
+            curTimeInMillis = it
+            val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis, true)
+            binding.tvTimer.text = formattedTime
+        }
     }
 
     private fun toggleRun() {
@@ -96,7 +105,7 @@ class TrackingFragment : Fragment() {
 
     private fun moveCameraToUser() {
         if(pathPoints.isNotEmpty() && pathPoints.last().isNotEmpty()) {
-            map.animateCamera(
+            map?.animateCamera(
                 CameraUpdateFactory.newLatLngZoom(
                     pathPoints.last().last(),
                     MAP_ZOOM
@@ -113,7 +122,7 @@ class TrackingFragment : Fragment() {
                 .width(POLYLINE_WIDTH)
                 .addAll(it)
 
-            map.addPolyline(polylineOptions)
+            map?.addPolyline(polylineOptions)
         }
     }
 
@@ -128,7 +137,7 @@ class TrackingFragment : Fragment() {
                 .add(preLastLatLng)
                 .add(lastLatLng)
 
-            map.addPolyline(polylineOptions)
+            map?.addPolyline(polylineOptions)
         }
     }
 
