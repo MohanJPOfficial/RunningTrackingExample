@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         navHostFragment?.findNavController()
             ?.let { binding.bottomNavigationView.setupWithNavController(it) }
 
-        binding.bottomNavigationView.setOnNavigationItemReselectedListener {
+        binding.bottomNavigationView.setOnItemReselectedListener {
             /**
              * no operation
              **/
