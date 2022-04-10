@@ -37,6 +37,12 @@ class MainActivity : AppCompatActivity() {
         navHostFragment?.findNavController()
             ?.let { binding.bottomNavigationView.setupWithNavController(it) }
 
+        binding.bottomNavigationView.setOnNavigationItemReselectedListener {
+            /**
+             * no operation
+             **/
+        }
+
         supportFragmentManager.findFragmentById(R.id.navHostFragment)?.findNavController()
             ?.addOnDestinationChangedListener { _, destination, _ ->
 

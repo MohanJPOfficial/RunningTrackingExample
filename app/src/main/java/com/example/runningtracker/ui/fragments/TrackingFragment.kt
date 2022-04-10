@@ -13,6 +13,7 @@ import com.example.runningtracker.db.Run
 import com.example.runningtracker.other.Constants.ACTION_PAUSE_SERVICE
 import com.example.runningtracker.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.example.runningtracker.other.Constants.ACTION_STOP_SERVICE
+import com.example.runningtracker.other.Constants.CANCEL_TRACKING_DIALOG_TAG
 import com.example.runningtracker.other.Constants.MAP_ZOOM
 import com.example.runningtracker.other.Constants.POLYLINE_COLOR
 import com.example.runningtracker.other.Constants.POLYLINE_WIDTH
@@ -31,6 +32,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
+import javax.inject.Inject
 import kotlin.math.round
 
 @AndroidEntryPoint
@@ -47,7 +49,8 @@ class TrackingFragment : Fragment() {
 
     private var menu: Menu? = null
 
-    private var weight = 80f
+    @set: Inject
+    var weight = 80f
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,6 +74,15 @@ class TrackingFragment : Fragment() {
 
         binding.btnToggleRun.setOnClickListener {
             toggleRun()
+        }
+
+        //for survive screen rotation
+        if(savedInstanceState != null) {
+            val cancelTrackingDialog = parentFragmentManager.findFragmentByTag(
+                CANCEL_TRACKING_DIALOG_TAG) as CancelTrackingDialog?
+            cancelTrackingDialog?.setYesListener {
+                stopRun()
+            }
         }
 
         binding.btnFinishRun.setOnClickListener {
@@ -111,10 +123,10 @@ class TrackingFragment : Fragment() {
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
 
-        if(!isTracking) {
+        if(!isTracking && curTimeInMillis > 0L) {
             binding.btnToggleRun.text = "Start"
             binding.btnFinishRun.visibility = View.VISIBLE
-        } else {
+        } else if(isTracking) {
             binding.btnToggleRun.text = "Stop"
             menu?.getItem(0)?.isVisible = true
             binding.btnFinishRun.visibility = View.GONE
@@ -237,23 +249,15 @@ class TrackingFragment : Fragment() {
     }
 
     private fun showCancelTrackingDialog() {
-        val dialog = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-            .setTitle("Cancel the Run?")
-            .setMessage("Are you sure to cancel the current run and delete all its data?")
-            .setIcon(R.drawable.ic_delete)
-            .setPositiveButton("Yes") { _,_ ->
+        CancelTrackingDialog().apply {
+            setYesListener {
                 stopRun()
             }
-            .setNegativeButton("No") { dialogInterface, _ ->
-                dialogInterface.cancel()
-                dialogInterface.dismiss()
-            }
-            .create()
-
-        dialog.show()
+        }.show(parentFragmentManager, CANCEL_TRACKING_DIALOG_TAG)
     }
 
     private fun stopRun() {
+        binding.tvTimer.text = "00:00:00:00"
         sendCommandToService(ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
